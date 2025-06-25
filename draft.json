@@ -1,0 +1,147 @@
+[
+{
+    "Contract": "HotDollarsToken",
+    "Contract_Address": "TBU",
+    "Source_Code": "pragma solidity >=0.4.22 <0.6.0;\n contract EIP20Interface {\n    uint256 public totalSupply;\n    function balanceOf(address _owner) public view returns (uint256 balance);\n    function transfer(address _to, uint256 _value) public returns (bool success);\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\n    function approve(address _spender, uint256 _value) public returns (bool success);\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining);\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n}\ncontract HotDollarsToken is EIP20Interface {\n    uint256 constant private MAX_UINT256 = 2**256 - 1;\n    mapping (address => uint256) public balances;\n    mapping (address => mapping (address => uint256)) public allowed;\n    string public name;\n    uint8 public decimals;\n    string public symbol;\n    constructor() public {\n        totalSupply = 3 * 1e28;\n        name = \"HotDollars Token\";\n        decimals = 18;\n        symbol = \"HDS\";\n        balances[msg.sender] = totalSupply;\n    }\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n        emit Transfer(msg.sender, _to, _value);\n        return true;\n    }\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        uint256 allowance = allowed[_from][msg.sender];\n        require(balances[_from] >= _value && allowance >= _value);\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        if (allowance < MAX_UINT256) {\n            allowed[_from][msg.sender] -= _value;\n        }\n        emit Transfer(_from, _to, _value);\n        return true;\n    }\n    function balanceOf(address _owner) public view returns (uint256 balance) {\n        return balances[_owner];\n    }\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowed[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n        return allowed[_owner][_spender];\n    }\n}",
+    "Opcode_Path":"../Opcode/1.sol",
+    "Verified": true,
+    "compiler_version": ">=0.4.22 <0.6.0",
+    "License": "MIT",
+    "Vulnerabilities": [
+      {
+        "Type": "Local Variable Shadowing",
+        "Location": "HotDollarsToken.allowance(address,address) - Line 104-106; EIP20Interface.allowance(address,address) - Line 45",
+        "Risk_Level": "Low",
+        "Description": "transferFrom.allowance shadows HotDollarsToken.allowance and EIP20Interface.allowance. This can cause confusion or introduce bugs. Rename the local variable to avoid shadowing."
+      },
+      {
+        "Type": "Outdated Solidity Version",
+        "Location": "pragma solidity >=0.4.22 <0.6.0 - Line 5",
+        "Risk_Level": "Low",
+        "Description": "This version range includes multiple known compiler bugs. Recommended to use Solidity >=0.8.0."
+      },
+      {
+        "Type": "Naming Convention Violation",
+        "Location": "Lines 74, 82, 94, 98, 104",
+        "Risk_Level": "Medium",
+        "Description": "Function parameters such as _to, _from, and _value do not follow Solidity's mixedCase naming convention. Use camelCase names to improve readability and adhere to Solidity style guidelines."
+      }
+    ],
+    "is_safe": false
+  },
+  {
+    "Contract": "CareerOnToken",
+    "Contract_Address": "TBU",
+    "Source_Code": "pragma solidity ^0.5.1;\n\ncontract CareerOnToken {\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed a_owner, address indexed _spender, uint256 _value);\n    event OwnerChang(address indexed _old,address indexed _new,uint256 _coin_change);\n\n    uint256 public totalSupply;  \n    string public name;\n    uint8 public decimals;\n    string public symbol;\n    address public owner;\n    mapping (address => uint256) public balances;\n    mapping (address => mapping (address => uint256)) public allowed;\n\n    bool isTransPaused=false;\n\n    constructor(uint256 _initialAmount, uint8 _decimalUnits) public {\n        owner = msg.sender;\n        if (_initialAmount <= 0) {\n            totalSupply = 100000000000000000;\n            balances[owner] = totalSupply;\n        } else {\n            totalSupply = _initialAmount;\n            balances[owner] = _initialAmount;\n        }\n        if (_decimalUnits <= 0) {\n            decimals = 2;\n        } else {\n            decimals = _decimalUnits;\n        }\n        name = \"CareerOn Chain Token\";\n        symbol = \"COT\";\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        assert(\n            _to != address(this) &&\n            !isTransPaused &&\n            balances[msg.sender] >= _value &&\n            balances[_to] + _value > balances[_to]\n        );\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n        if (msg.sender == owner) {\n            emit Transfer(address(this), _to, _value);\n        } else {\n            emit Transfer(msg.sender, _to, _value);\n        }\n        return true;\n    }\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        assert(\n            _to != address(this) &&\n            !isTransPaused &&\n            balances[msg.sender] >= _value &&\n            balances[_to] + _value > balances[_to] &&\n            allowed[_from][msg.sender] >= _value\n        );\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        allowed[_from][msg.sender] -= _value;\n        if (_from == owner) {\n            emit Transfer(address(this), _to, _value);\n        } else {\n            emit Transfer(_from, _to, _value);\n        }\n        return true;\n    }\n\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        assert(msg.sender != _spender && _value > 0);\n        allowed[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n        return allowed[_owner][_spender];\n    }\n\n    function changeOwner(address newOwner) public {\n        assert(msg.sender == owner && msg.sender != newOwner);\n        balances[newOwner] = balances[owner];\n        balances[owner] = 0;\n        owner = newOwner;\n        emit OwnerChang(msg.sender, newOwner, balances[owner]);\n    }\n\n    function setPauseStatus(bool isPaused) public {\n        assert(msg.sender == owner);\n        isTransPaused = isPaused;\n    }\n\n    function changeContractName(string memory _newName, string memory _newSymbol) public {\n        assert(msg.sender == owner);\n        name = _newName;\n        symbol = _newSymbol;\n    }\n\n    function () external payable {\n        revert();\n    }\n}",
+    "Opcode_Path": "../Opcode/2.sol",
+    "Verified": true,
+    "compiler_version": "v0.5.1",
+    "License": "MIT",
+    "Vulnerabilities": [
+      {
+        "Type": "Locked Ether",
+        "Location": "Fallback function - line 133",
+        "Risk_Level": "Medium",
+        "Description": "Contract can receive Ether but lacks a withdrawal mechanism, potentially locking funds permanently."
+      },
+      {
+        "Type": "Outdated Solidity Version",
+        "Location": "pragma solidity ^0.5.1; - line 5",
+        "Risk_Level": "Medium",
+        "Description": "This version range includes multiple known compiler bugs. Recommended to use Solidity >=0.8.0."
+      },
+      {
+        "Type": "Naming Convention Violation",
+        "Location": "Multiple function parameters",
+        "Risk_Level": "Medium",
+        "Description": "Function parameters use underscore-prefixed names which do not follow Solidity mixedCase naming convention."
+      },
+      {
+        "Type": "Excessively Long Integer Literal",
+        "Location": "Constructor - line 30",
+        "Risk_Level": "Medium",
+        "Description": "Literal value `100000000000000000` used for `totalSupply` may be unclear. Define using scientific notation or constants for clarity."
+      },
+      {
+        "Type": "Visibility and Gas Optimization",
+        "Location": "changeContractName function - line 126",
+        "Risk_Level": "Medium",
+        "Description": "This function should be declared `external` and use `calldata` for string parameters to save gas."
+      }
+    ],
+    "is_safe": false
+  },
+  {
+    "Contract": "CareerOnToken",
+    "Contract_Address": "TBU",
+    "Source_Code": "pragma solidity ^0.5.1;\n\ncontract CareerOnToken {\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed a_owner, address indexed _spender, uint256 _value);\n    event OwnerChang(address indexed _old,address indexed _new,uint256 _coin_change);\n\n    uint256 public totalSupply;  \n    string public name;\n    uint8 public decimals;\n    string public symbol;\n    address public owner;\n\n    mapping (address => uint256) internal balances;\n    mapping (address => mapping (address => uint256)) internal allowed;\n\n    bool isTransPaused=false;\n\n    constructor(uint256 _initialAmount, uint8 _decimalUnits) public {\n        owner = msg.sender;\n        if (_initialAmount <= 0) {\n            totalSupply = 100000000000000000;\n            balances[owner] = totalSupply;\n        } else {\n            totalSupply = _initialAmount;\n            balances[owner] = _initialAmount;\n        }\n        if (_decimalUnits <= 0) {\n            decimals = 2;\n        } else {\n            decimals = _decimalUnits;\n        }\n        name = \"CareerOn Chain Token\";\n        symbol = \"COT\";\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        assert(\n            _to != address(this) &&\n            !isTransPaused &&\n            balances[msg.sender] >= _value &&\n            balances[_to] + _value > balances[_to]\n        );\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n        if (msg.sender == owner) {\n            emit Transfer(address(this), _to, _value);\n        } else {\n            emit Transfer(msg.sender, _to, _value);\n        }\n        return true;\n    }\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        assert(\n            _to != address(this) &&\n            !isTransPaused &&\n            balances[msg.sender] >= _value &&\n            balances[_to] + _value > balances[_to] &&\n            allowed[_from][msg.sender] >= _value\n        );\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        allowed[_from][msg.sender] -= _value;\n        if (_from == owner) {\n            emit Transfer(address(this), _to, _value);\n        } else {\n            emit Transfer(_from, _to, _value);\n        }\n        return true;\n    }\n\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        assert(msg.sender != _spender && _value > 0);\n        allowed[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n        return allowed[_owner][_spender];\n    }\n\n    function balanceOf(address accountAddr) public view returns (uint256) {\n        return balances[accountAddr];\n    }\n\n    function changeOwner(address newOwner) public {\n        assert(msg.sender == owner && msg.sender != newOwner);\n        balances[newOwner] = balances[owner];\n        balances[owner] = 0;\n        owner = newOwner;\n        emit OwnerChang(msg.sender, newOwner, balances[owner]);\n    }\n\n    function setPauseStatus(bool isPaused) public {\n        assert(msg.sender == owner);\n        isTransPaused = isPaused;\n    }\n\n    function changeContractName(string memory _newName, string memory _newSymbol) public {\n        assert(msg.sender == owner);\n        name = _newName;\n        symbol = _newSymbol;\n    }\n\n    function () external payable {\n        revert();\n    }\n}",
+    "Opcode_Path": "../Opcode/CareerOnToken.sol",
+    "Verified": true,
+    "compiler_version": "v0.5.1",
+    "License": "MIT",
+    "Vulnerabilities": [
+      {
+        "Type": "Locked Ether",
+        "Location": "Fallback function - line 133",
+        "Description": "Contract can receive Ether but has no function to withdraw it. Ether sent to this contract will be permanently locked unless a withdrawal function is added."
+      },
+      {
+        "Type": "Outdated Solidity Version",
+        "Location": "pragma solidity ^0.5.1; - line 5",
+        "Description": "Solidity version ^0.5.1 includes known bugs. Recommended to upgrade to >=0.8.0. See: https://solidity.readthedocs.io/en/latest/bugs.html"
+      },
+      {
+        "Type": "Naming Convention Violation",
+        "Location": "Function parameters throughout contract",
+        "Description": "Parameter names such as `_to`, `_value`, `_from`, `_spender`, `_newName`, `_newSymbol` do not follow mixedCase naming convention."
+      },
+      {
+        "Type": "Long Numeric Literal",
+        "Location": "totalSupply initialization - line 30",
+        "Description": "Literal value `100000000000000000` used for `totalSupply` may be unclear. Define using scientific notation or constants for clarity."
+      },
+      {
+        "Type": "Public Function Should Be External",
+        "Location": "changeContractName(string,string) - line 126",
+        "Description": "This function can be declared `external` for gas optimization. Parameters should also use `calldata` instead of `memory` for efficiency."
+      }
+    ],
+    "is_safe": false
+  },
+  {
+    "Contract": "PHO",
+    "Contract_Address": "TBU",
+    "Source_Code": "pragma solidity >= 0.5.0 < 0.6.0;\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address who) external view returns (uint256);\n    function transfer(address to, uint256 value) external returns (bool);\n    event Transfer(address indexed from, address indexed to, uint256 value);\n}\n\ncontract PHO is IERC20 {\n    string public name = \"PHO\";\n    string public symbol = \"PHO\";\n    uint8 public decimals = 18;\n\n    uint256 saleAmount;\n    uint256 evtAmount;\n    uint256 teamAmount;\n\n    uint256 _totalSupply;\n    mapping(address => uint256) balances;\n\n    address public owner;\n    address public sale;\n    address public evt;\n    address public team;\n\n    modifier isOwner {\n        require(owner == msg.sender);\n        _;\n    }\n\n    constructor() public {\n        owner   = msg.sender;\n        sale    = 0x071F73f4D0befd4406901AACE6D5FFD6D297c561;\n        evt     = 0x76535ca5BF1d33434A302e5A464Df433BB1F80F6;\n        team    = 0xD7EC5D8697e4c83Dc33D781d19dc2910fB165D5C;\n\n        saleAmount    = toWei(1000000000);\n        evtAmount     = toWei(200000000);\n        teamAmount    = toWei(800000000);\n        _totalSupply  = toWei(2000000000);\n\n        require(_totalSupply == saleAmount + evtAmount + teamAmount );\n\n        balances[owner] = _totalSupply;\n        emit Transfer(address(0), owner, balances[owner]);\n\n        transfer(sale, saleAmount);\n        transfer(evt, evtAmount);\n        transfer(team, teamAmount);\n        require(balances[owner] == 0);\n    }\n\n    function totalSupply() public view returns (uint) {\n        return _totalSupply;\n    }\n\n    function balanceOf(address who) public view returns (uint256) {\n        return balances[who];\n    }\n\n    function transfer(address to, uint256 value) public returns (bool success) {\n        require(msg.sender != to);\n        require(value > 0);\n\n        require( balances[msg.sender] >= value );\n        require( balances[to] + value >= balances[to] );\n\n        if(msg.sender == team) {\n            require(now >= 1589036400);\n            if(balances[msg.sender] - value < toWei(600000000))\n                require(now >= 1620572400);\n            if(balances[msg.sender] - value < toWei(400000000))\n                require(now >= 1652108400);\n            if(balances[msg.sender] - value < toWei(200000000))\n                require(now >= 1683644400);\n        }\n\n        balances[msg.sender] -= value;\n        balances[to] += value;\n\n        emit Transfer(msg.sender, to, value);\n        return true;\n    }\n\n    function burnCoins(uint256 value) public {\n        require(balances[msg.sender] >= value);\n        require(_totalSupply >= value);\n\n        balances[msg.sender] -= value;\n        _totalSupply -= value;\n\n        emit Transfer(msg.sender, address(0), value);\n    }\n\n    function toWei(uint256 value) private view returns (uint256) {\n        return value * (10 ** uint256(decimals));\n    }\n}",
+    "Opcode_Path": "../Opcode/4.sol",
+    "Verified": true,
+    "compiler_version": "v0.5.x",
+    "License": "MIT",
+    "Vulnerabilities": [
+      {
+        "Type": "Block Timestamp Dependency",
+        "Location": "transfer(address to, uint256 value) - lines 87 to 95",
+        "Risk_Level": "Medium",
+        "Description": "The transfer function uses 'now' (i.e., block.timestamp) to enforce vesting/locking schedules, which can be manipulated slightly by miners."
+      },
+      {
+        "Type": "Outdated Solidity Version",
+        "Location": "pragma solidity >=0.5.0 <0.6.0; - line 5",
+        "Risk_Level": "Medium",
+        "Description": "This version range includes multiple known compiler bugs. Recommended to use Solidity >=0.8.0."
+      },
+      {
+        "Type": "Hardcoded Large Number Literals",
+        "Location": "constructor and transfer function - lines 56 to 59, 89 to 93",
+        "Risk_Level": "Medium",
+        "Description": "Large numeric literals are used directly, which reduces readability and increases the chance of errors."
+      },
+      {
+        "Type": "State Variables Could Be Constant",
+        "Location": "string public name, string public symbol, uint8 public decimals - lines 29 to 31",
+        "Risk_Level": "Medium",
+        "Description": "These variables are never modified after deployment and should be marked as 'constant' to reduce gas costs and improve clarity."
+      }
+    ],
+    "is_safe": false
+  }
+]
