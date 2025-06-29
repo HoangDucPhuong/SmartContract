@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 # Load dataset
-with open("draft.json", "r", encoding="utf-8") as f:
+with open("train_data.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 texts = []

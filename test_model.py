@@ -1,38 +1,37 @@
-from ml_inference import predict_vulnerabilities
 import json
+import joblib
+import os
+from sklearn.metrics import classification_report
+from ml_inference import predict_vulnerabilities
 
-with open("draft.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
+# Load test data
+with open("test_data.json", "r", encoding="utf-8") as f:
+    test_data = json.load(f)
 
 correct = 0
-total = 0
+total = len(test_data)
 
-for item in data[:10]:  # limit to first 10 entries
-    code = item.get("Source_Code", "").strip()
-    vulnerabilities = item.get("Vulnerabilities", [])
+print("=== TEST RESULTS ===\n")
 
-    if not code or not vulnerabilities:
-        continue
+for item in test_data:
+    code = item["Source_Code"]
+    actual = set(v["Type"] for v in item["Vulnerabilities"] if v.get("Type"))
 
-    # Extract only the 'Type' of each vulnerability
-    actual_labels = set(
-        v["Type"].strip() for v in vulnerabilities if v.get("Type")
-    )
-
-    # Run inference
     result = predict_vulnerabilities(code)
-    predicted_labels = set(result["predicted_labels"])
+    predicted = set(result["predicted_labels"])
+    confidence = result["confidence_scores"]
 
-    print("Smart Contract:", code[:100], "...")
-    print("Predicted:", predicted_labels)
-    print("Actual:   ", actual_labels)
-    print("Confidence Scores:", result["confidence_scores"])
-    print("-" * 60)
+    print("Contract:", code[:50].replace("\n", " ") + ("..." if len(code) > 50 else ""))
+    print("Predicted:", predicted)
+    print("Actual:", actual)
+    print("Confidence Scores:", confidence)
 
-    if predicted_labels & actual_labels:
+    if predicted == actual:
         correct += 1
-    total += 1
+    print("-" * 50)
 
-# Print test accuracy
-accuracy = correct / total if total > 0 else 0
-print(f"Overlap Accuracy: {accuracy:.2f}")
+print("\n=== SUMMARY ===")
+print(f"Total Contracts Tested : {total}")
+print(f"Correct Predictions    : {correct}")
+print(f"Accuracy               : {correct / total * 100:.2f}%")
+print(f"Wrong Predictions      : {total - correct}")
