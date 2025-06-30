@@ -1,4 +1,11 @@
 import re
+from sklearn.preprocessing import MultiLabelBinarizer
+
+def decode_labels(labels, mlb: MultiLabelBinarizer):
+    """
+    Convert one-hot encoded labels back to original string labels.
+    """
+    return mlb.inverse_transform(mlb.transform(labels))
 
 def normalize_solidity_code(code):
     # Remove single-line comments
