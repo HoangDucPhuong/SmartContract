@@ -1,18 +1,21 @@
 import re
-import joblib
-import numpy as np
 
 def normalize_solidity_code(code):
+    # Remove single-line comments
     code = re.sub(r'//.*', '', code)
+    # Remove multi-line comments
     code = re.sub(r'/\*[\s\S]*?\*/', '', code)
+    # Remove extra whitespace
     code = re.sub(r'\s+', ' ', code)
 
+    # Protect important Solidity keywords
     keywords = [
         'address', 'uint256', 'require', 'msg', 'sender', 'call', 'value',
         'function', 'public', 'private', 'external', 'internal', 'view', 'returns'
     ]
     keywords_pattern = r'\b(?:' + '|'.join(re.escape(k) for k in keywords) + r')\b'
 
+    # Replace all variable and function names that are not keywords
     tokens = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', code)
     unique_tokens = set(tokens)
     replace_map = {}
@@ -23,25 +26,8 @@ def normalize_solidity_code(code):
             replace_map[token] = f'VAR{counter}'
             counter += 1
 
+    # Replace tokens in code
     for original, replacement in replace_map.items():
         code = re.sub(rf'\b{original}\b', replacement, code)
 
     return code.strip()
-
-# Load model, vectorizer, and label binarizer
-rf_model = joblib.load("model/rf_model.joblib")
-tfidf_vectorizer = joblib.load("model/tfidf_vectorizer.joblib")
-label_binarizer = joblib.load("model/label_binarizer.joblib")
-
-def predict_vulnerabilities(contract_code):
-    normalized_code = normalize_solidity_code(contract_code)
-    tfidf_features = tfidf_vectorizer.transform([normalized_code])
-    prediction = rf_model.predict(tfidf_features)
-    confidence_scores = rf_model.predict_proba(tfidf_features)
-
-    predicted_labels = label_binarizer.inverse_transform(prediction)
-    result = {
-        "predicted_labels": predicted_labels[0] if predicted_labels else [],
-        "confidence": float(confidence_scores[0].max()) if confidence_scores else 0.0
-    }
-    return result
